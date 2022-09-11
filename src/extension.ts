@@ -35,6 +35,7 @@ class MapboxPreview {
     public static lastFile: vscode.Uri
     private readonly panel: vscode.WebviewPanel
     private fileUri: vscode.Uri
+    private lastCode: string = ''
     private disposables: vscode.Disposable[] = []
 
     public static createOrShow(fileUri: vscode.Uri) {
@@ -92,8 +93,9 @@ class MapboxPreview {
 
         try {
             const data = await vscode.workspace.fs.readFile(this.fileUri)
-            const style = data.toString()
-            JSON.parse(style)
+            const style = JSON.stringify(JSON.parse(data.toString()))
+            if (style == this.lastCode) return
+            this.lastCode = style
         } catch {
             return vscode.window.showErrorMessage('Invalid style')
         }
