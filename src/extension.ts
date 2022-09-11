@@ -140,7 +140,7 @@ class MapboxPreview {
                 return console.log('Same style, skipping')
             this.lastStyle = style
         } catch (e: any) {
-            console.log('Could not load', this.fileUri, ':', e.message)
+            console.log(`Could not load '${nicePath}': ${e.message}`)
             return vscode.window.showErrorMessage(`Invalid style: ${nicePath}`)
         }
 
@@ -149,12 +149,11 @@ class MapboxPreview {
         const previewUri = webview.asWebviewUri(
             vscode.Uri.joinPath(MapboxPreview.extUri, 'media', 'preview.js')
         )
-        console.log('Rendering:', nicePath)
 
         const token = vscode.workspace
             .getConfiguration()
             .get<string>('mapbox.preview.token')
-        if (!token) vscode.window.showErrorMessage('No token!')
+        if (!token) return vscode.window.showErrorMessage('No token!')
 
         const version = vscode.workspace
             .getConfiguration()
@@ -170,6 +169,8 @@ class MapboxPreview {
             `script-src ${webview.cspSource} 'nonce-${nonce}' https://api.mapbox.com`,
             `worker-src ${webview.cspSource} 'strict-dynamic'`,
         ].join('; ')
+
+        console.log('Rendering:', nicePath)
 
         this.panel.webview.html = `
 <!DOCTYPE html>
