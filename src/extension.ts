@@ -144,8 +144,9 @@ class MapboxPreview {
             return vscode.window.showErrorMessage(`Invalid style: ${nicePath}`)
         }
 
-        const styleUri = this.panel.webview.asWebviewUri(this.fileUri)
-        const previewUri = this.panel.webview.asWebviewUri(
+        const webview = this.panel.webview
+        const styleUri = webview.asWebviewUri(this.fileUri)
+        const previewUri = webview.asWebviewUri(
             vscode.Uri.joinPath(MapboxPreview.extUri, 'media', 'preview.js')
         )
         console.log('Rendering:', nicePath)
@@ -159,8 +160,16 @@ class MapboxPreview {
             .getConfiguration()
             .get<string>('mapbox.preview.version', '2.10.0')
 
-        // Make sure content has changed to force re-render
-        const random = Math.random()
+        const nonce = getNonce()
+
+        const csp = [
+            `default-src 'none'`,
+            `img-src ${webview.cspSource} data: https:`,
+            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com`,
+            `style-src ${webview.cspSource} 'unsafe-inline' https://api.mapbox.com`,
+            `script-src ${webview.cspSource} 'nonce-${nonce}' https://api.mapbox.com`,
+            `worker-src ${webview.cspSource} 'strict-dynamic'`,
+        ].join('; ')
 
         this.panel.webview.html = `
 <!DOCTYPE html>
@@ -168,19 +177,28 @@ class MapboxPreview {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+        <meta http-equiv="Content-Security-Policy" content="${csp}">
+
         <link href="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.css" rel="stylesheet">
         <script src="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.js"></script>
+        <script nonce="${nonce}">mapboxgl.accessToken = '${token}'; window.styleUri = '${styleUri}';</script>
         <script src="${previewUri}"></script>
-        <style>
-            body { margin: 0; padding: 0; }
-            #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-        </style>
+        <style>#map { position: absolute; inset: 0; }</style>
     </head>
-    <body>
-        <div id="map"></div>
-        <script>mapboxgl.accessToken = '${token}'; window.styleUri = '${styleUri}'; ${random};</script>
-    </body>
+    <body><div id="map"></div></body>
 </html>
 `
     }
+}
+
+function getNonce() {
+    const possible =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
+        'abcdefghijklmnopqrstuvwxyz' +
+        '0123456789'
+
+    const randomChar = () =>
+        possible.charAt(Math.floor(Math.random() * possible.length))
+
+    return [...new Array(64).keys()].map(randomChar).join('')
 }
