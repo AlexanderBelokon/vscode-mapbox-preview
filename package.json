@@ -1,7 +1,7 @@
 {
     "name": "mapbox-preview",
     "description": "Mapbox GL JS Preview",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "publisher": "AlexanderBelokon",
     "private": true,
     "license": "bsd-2-clause",

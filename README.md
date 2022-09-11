@@ -1,6 +1,7 @@
 # Mapbox GL JS Preview
 
-Open a style.json in editor and use `Cmd + Shift + P` > `Mapbox: Preview` to open the preview
+Set your Mapbox Access Token in `Preferences` > `Settings` > `Mapbox: Preview` > `Token`.
+Open a `style.json` in editor and use `Cmd + Shift + P` > `Mapbox: Preview` to open the preview.
 
 ## Running
 
