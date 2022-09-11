@@ -1,0 +1,64 @@
+{
+  "name": "mapbox-preview",
+  "description": "Mapbox GL JS Preview",
+  "version": "0.0.1",
+  "publisher": "AlexanderBelokon",
+  "private": true,
+  "license": "cc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlexanderBelokon/vscode-mapbox-preview"
+  },
+  "engines": {
+    "vscode": "^1.47.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:mapboxPreview.start",
+    "onWebviewPanel:mapboxPreview"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": [
+      {
+        "id": "mapbox.preview",
+        "title": "Mapbox Preview",
+        "order": 1,
+        "properties": {
+          "mapbox.preview.token": {
+            "type": "string"
+          },
+          "mapbox.preview.version": {
+            "type": "string",
+            "default": "2.10.0",
+            "format": "\\d+.\\d+.\\d+"
+          }
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "mapboxPreview.start",
+        "title": "Preview",
+        "category": "Mapbox"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint . --ext .ts,.tsx",
+    "watch": "tsc -w -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.7",
+    "@types/vscode": "^1.47.0",
+    "@types/vscode-webview": "^1.57.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.0",
+    "@typescript-eslint/parser": "^5.30.0",
+    "eslint": "^8.13.0",
+    "typescript": "^4.7.2"
+  }
+}
