@@ -53,6 +53,7 @@
                     },
                     "mapboxPreview.refreshOnKeystroke": {
                         "type": "boolean",
+                        "default": false,
                         "description": "Controls whether style should be updated every time you press a key in the style editor"
                     }
                 }
