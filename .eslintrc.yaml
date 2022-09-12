@@ -1,0 +1,15 @@
+root: true
+parser: "@typescript-eslint/parser"
+plugins:
+    - "@typescript-eslint"
+extends:
+    - "eslint:recommended"
+    - "plugin:@typescript-eslint/recommended"
+ignorePatterns: ["media"]
+rules:
+    indent: off
+    semi: [error, "never"]
+    "@typescript-eslint/no-unused-vars": off
+    "@typescript-eslint/no-explicit-any": off
+    "@typescript-eslint/explicit-module-boundary-types": off
+    "@typescript-eslint/no-non-null-assertion": off
