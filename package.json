@@ -41,13 +41,15 @@
                 "properties": {
                     "mapboxPreview.token": {
                         "type": "string",
-                        "editPresentation": "multilineText"
+                        "editPresentation": "multilineText",
+                        "description": "Mapbox API token"
                     },
                     "mapboxPreview.version": {
                         "type": "string",
                         "default": "2.10.0",
                         "pattern": "^\\d+\\.\\d+\\.\\d+$",
-                        "patternErrorMessage": "Must be a valid SemVer string"
+                        "patternErrorMessage": "Must be a valid SemVer string",
+                        "description": "Version of Mapbox GL JS to use"
                     },
                     "mapboxPreview.refreshOnKeystroke": {
                         "type": "boolean",
