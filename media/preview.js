@@ -9,6 +9,13 @@ addEventListener('load', function () {
         container: 'map',
     }
 
+    const report = e => {
+        console.error('caught:', e)
+        vscode.postMessage({ error: e.message, stack: e.stack })
+    }
+    window.addEventListener('error', report)
+    window.addEventListener('unhandledrejection', report)
+
     vscode.postMessage({ text: 'Starting Mapbox GL JS' })
 
     const map = new mapboxgl.Map(state)
@@ -18,6 +25,7 @@ addEventListener('load', function () {
     map.on('zoom', () => (state.dirty = true))
     map.on('rotate', () => (state.dirty = true))
     map.on('pitch', () => (state.dirty = true))
+    map.on('error', ({ error }) => report(error))
 
     setInterval(() => {
         if (!state.dirty) return

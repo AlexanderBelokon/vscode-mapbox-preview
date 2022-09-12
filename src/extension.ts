@@ -111,7 +111,11 @@ class MapboxPreview {
         )
 
         this.panel.webview.onDidReceiveMessage(
-            e => console.log(e),
+            e => {
+                if (!e.error) return console.log(e)
+                console.error(e.error)
+                return vscode.window.showErrorMessage(e.error)
+            },
             null,
             this.disposables
         )
