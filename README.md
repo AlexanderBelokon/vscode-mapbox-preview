@@ -2,7 +2,7 @@
 
 This extension allows you to preview your stylesheet in Mapbox GL JS in real time.
 
-![Preview of the extension's functionality](docs/preview.gif)
+![Preview of the extension's functionality](assets/preview.gif)
 
 ## Usage
 

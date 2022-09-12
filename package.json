@@ -6,6 +6,11 @@
     "publisher": "AlexanderBelokon",
     "private": true,
     "license": "bsd-2-clause",
+    "icon": "assets/icon.png",
+    "galleryBanner": {
+        "color": "#0E1836",
+        "theme": "dark"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/AlexanderBelokon/vscode-mapbox-preview"
