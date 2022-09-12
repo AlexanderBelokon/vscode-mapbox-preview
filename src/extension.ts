@@ -7,7 +7,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (!file)
                 return vscode.window.showErrorMessage('Nothing to preview')
             console.log('Command:', file.path)
-            context.workspaceState.update('mapbox.preview.style', file.path)
+            context.workspaceState.update('mapboxPreview.style', file.path)
             MapboxPreview.extUri = context.extensionUri
             MapboxPreview.createOrShow(file)
         })
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
             MapboxPreview.extUri = context.extensionUri
 
             const previous = context.workspaceState.get<string>(
-                'mapbox.preview.style'
+                'mapboxPreview.style'
             )
             if (!MapboxPreview.lastFile && previous)
                 MapboxPreview.lastFile = vscode.Uri.file(previous)
@@ -152,12 +152,12 @@ class MapboxPreview {
 
         const token = vscode.workspace
             .getConfiguration()
-            .get<string>('mapbox.preview.token')
+            .get<string>('mapboxPreview.token')
         if (!token) return vscode.window.showErrorMessage('No token!')
 
         const version = vscode.workspace
             .getConfiguration()
-            .get<string>('mapbox.preview.version', '2.10.0')
+            .get<string>('mapboxPreview.version', '2.10.0')
 
         const nonce = getNonce()
 

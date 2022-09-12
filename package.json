@@ -1,6 +1,7 @@
 {
     "name": "mapbox-preview",
-    "description": "Mapbox GL JS Preview",
+    "displayName": "Mapbox Preview",
+    "description": "Preview styles for Mapbox GL JS in a webview panel",
     "version": "0.1.1",
     "publisher": "AlexanderBelokon",
     "private": true,
@@ -13,7 +14,13 @@
         "vscode": "^1.47.0"
     },
     "categories": [
-        "Other"
+        "Visualization"
+    ],
+    "keywords": [
+        "mapbox",
+        "mapbox-gl-js",
+        "style",
+        "preview"
     ],
     "activationEvents": [
         "onCommand:mapboxPreview.start",
@@ -23,17 +30,19 @@
     "contributes": {
         "configuration": [
             {
-                "id": "mapbox.preview",
+                "id": "mapboxPreview",
                 "title": "Mapbox Preview",
                 "order": 1,
                 "properties": {
-                    "mapbox.preview.token": {
-                        "type": "string"
+                    "mapboxPreview.token": {
+                        "type": "string",
+                        "editPresentation": "multilineText"
                     },
-                    "mapbox.preview.version": {
+                    "mapboxPreview.version": {
                         "type": "string",
                         "default": "2.10.0",
-                        "format": "\\d+.\\d+.\\d+"
+                        "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                        "patternErrorMessage": "Must be a valid SemVer string"
                     }
                 }
             }
@@ -41,8 +50,8 @@
         "commands": [
             {
                 "command": "mapboxPreview.start",
-                "title": "Preview",
-                "category": "Mapbox"
+                "title": "Start",
+                "category": "Mapbox Preview"
             }
         ]
     },
