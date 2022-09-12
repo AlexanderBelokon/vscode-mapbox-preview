@@ -29,4 +29,12 @@ addEventListener('load', function () {
             pitch: map.getPitch(),
         })
     }, 100)
+
+    window.addEventListener('message', ({ data }) => {
+        const { command, style } = data
+        if (command != 'setStyle') return
+
+        console.log('Got a new style:', style)
+        map.setStyle(data.style)
+    })
 })

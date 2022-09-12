@@ -47,6 +47,7 @@ class MapboxPreview {
     private readonly panel: vscode.WebviewPanel
     private fileUri: vscode.Uri
     private lastStyle = ''
+    private lastSettings = ''
     private disposables: vscode.Disposable[] = []
 
     public static createOrShow(fileUri: vscode.Uri) {
@@ -130,25 +131,7 @@ class MapboxPreview {
     private async update() {
         if (!this.fileUri) return console.log('No file')
 
-        const nicePath = vscode.workspace.asRelativePath(this.fileUri)
-
-        this.panel.title = `Mapbox: ${nicePath}`
-        try {
-            const data = await vscode.workspace.fs.readFile(this.fileUri)
-            const style = JSON.stringify(JSON.parse(data.toString()))
-            if (style == this.lastStyle)
-                return console.log('Same style, skipping')
-            this.lastStyle = style
-        } catch (e: any) {
-            console.log(`Could not load '${nicePath}': ${e.message}`)
-            return vscode.window.showErrorMessage(`Invalid style: ${nicePath}`)
-        }
-
-        const webview = this.panel.webview
-        const styleUri = webview.asWebviewUri(this.fileUri)
-        const previewUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(MapboxPreview.extUri, 'media', 'preview.js')
-        )
+        const path = vscode.workspace.asRelativePath(this.fileUri)
 
         const token = vscode.workspace
             .getConfiguration()
@@ -158,6 +141,39 @@ class MapboxPreview {
         const version = vscode.workspace
             .getConfiguration()
             .get<string>('mapboxPreview.version', '2.10.0')
+
+        const settings = { token, version, path }
+        const nextSettings = JSON.stringify(settings)
+        const sameSettings = this.lastSettings == nextSettings
+        this.lastSettings = nextSettings
+
+        this.panel.title = `Mapbox: ${path}`
+
+        let sameStyle = false
+        try {
+            const data = await vscode.workspace.fs.readFile(this.fileUri)
+            const style = JSON.stringify(JSON.parse(data.toString()))
+            sameStyle = style == this.lastStyle
+            this.lastStyle = style
+        } catch (e: any) {
+            console.log(`Could not load '${path}': ${e.message}`)
+            return vscode.window.showErrorMessage(`Invalid style: ${path}`)
+        }
+
+        if (!sameStyle && this.lastStyle)
+            this.panel.webview.postMessage({
+                command: 'setStyle',
+                style: JSON.parse(this.lastStyle),
+            })
+
+        if (sameSettings)
+            return console.log('Same settings, skipping rendering')
+
+        const webview = this.panel.webview
+        const styleUri = webview.asWebviewUri(this.fileUri)
+        const previewUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(MapboxPreview.extUri, 'media', 'preview.js')
+        )
 
         const nonce = getNonce()
 
@@ -170,7 +186,7 @@ class MapboxPreview {
             `worker-src ${webview.cspSource} 'strict-dynamic'`,
         ].join('; ')
 
-        console.log('Rendering:', nicePath)
+        console.log('Rendering:', path)
 
         this.panel.webview.html = `
 <!DOCTYPE html>
