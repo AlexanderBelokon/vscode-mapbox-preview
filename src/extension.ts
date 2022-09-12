@@ -10,6 +10,10 @@ export function activate(context: vscode.ExtensionContext) {
             context.workspaceState.update('mapboxPreview.style', file.path)
             MapboxPreview.extUri = context.extensionUri
             MapboxPreview.createOrShow(file)
+
+            vscode.workspace.onDidChangeTextDocument(({ document }) =>
+                MapboxPreview.currentPanel?.refreshDocument(document)
+            )
         })
     )
 
@@ -28,8 +32,8 @@ export function activate(context: vscode.ExtensionContext) {
         },
     })
 
-    vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) =>
-        MapboxPreview.refresh(document)
+    vscode.workspace.onDidSaveTextDocument(document =>
+        MapboxPreview.refreshFile(document)
     )
 }
 
@@ -77,26 +81,6 @@ class MapboxPreview {
         )
     }
 
-    public static refresh(document: vscode.TextDocument) {
-        const same = document.uri.path == this.currentPanel?.fileUri?.path
-        const isSettings = document.uri.path.endsWith('settings.json')
-        const isJson = document.uri.path.endsWith('.json')
-        const loadable = isJson && !isSettings
-
-        if (!this.currentPanel)
-            if (loadable) return MapboxPreview.createOrShow(document.uri)
-            else return
-
-        if (!this.currentPanel.fileUri && loadable)
-            this.currentPanel.fileUri = document.uri
-
-        if ((!same && !isSettings) || !this.currentPanel.fileUri) return
-
-        console.log('Refreshing')
-
-        this.currentPanel.update()
-    }
-
     private constructor(panel: vscode.WebviewPanel, fileUri: vscode.Uri) {
         this.panel = panel
         this.fileUri = fileUri
@@ -132,6 +116,51 @@ class MapboxPreview {
         }
     }
 
+    public static refreshFile(document: vscode.TextDocument) {
+        const same = document.uri.path == this.currentPanel?.fileUri?.path
+        const isSettings = document.uri.path.endsWith('settings.json')
+        const isJson = document.uri.path.endsWith('.json')
+        const loadable = isJson && !isSettings
+
+        if (!this.currentPanel)
+            if (loadable) return MapboxPreview.createOrShow(document.uri)
+            else return
+
+        if (!this.currentPanel.fileUri && loadable)
+            this.currentPanel.fileUri = document.uri
+
+        if ((!same && !isSettings) || !this.currentPanel.fileUri) return
+
+        console.log('Refreshing')
+        this.currentPanel.update()
+    }
+
+    public refreshDocument(document: vscode.TextDocument) {
+        if (document.uri.path != this.fileUri.path) return
+
+        const refreshOnKeystroke = vscode.workspace
+            .getConfiguration()
+            .get('mapboxPreview.refreshOnKeystroke', false)
+        if (!refreshOnKeystroke) return
+
+        try {
+            const style = document.getText()
+            JSON.parse(style)
+            this.updateStyle(style)
+        } catch {}
+    }
+
+    private async updateStyle(style: string) {
+        if (this.lastStyle == style) return
+        this.lastStyle = style
+
+        console.log('Updating style')
+        this.panel.webview.postMessage({
+            command: 'setStyle',
+            style: JSON.parse(style),
+        })
+    }
+
     private async update() {
         if (!this.fileUri) return console.log('No file')
 
@@ -153,22 +182,14 @@ class MapboxPreview {
 
         this.panel.title = `Mapbox: ${path}`
 
-        let sameStyle = false
         try {
             const data = await vscode.workspace.fs.readFile(this.fileUri)
             const style = JSON.stringify(JSON.parse(data.toString()))
-            sameStyle = style == this.lastStyle
-            this.lastStyle = style
+            this.updateStyle(style)
         } catch (e: any) {
             console.log(`Could not load '${path}': ${e.message}`)
             return vscode.window.showErrorMessage(`Invalid style: ${path}`)
         }
-
-        if (!sameStyle && this.lastStyle)
-            this.panel.webview.postMessage({
-                command: 'setStyle',
-                style: JSON.parse(this.lastStyle),
-            })
 
         if (sameSettings)
             return console.log('Same settings, skipping rendering')

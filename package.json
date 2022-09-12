@@ -48,6 +48,10 @@
                         "default": "2.10.0",
                         "pattern": "^\\d+\\.\\d+\\.\\d+$",
                         "patternErrorMessage": "Must be a valid SemVer string"
+                    },
+                    "mapboxPreview.refreshOnKeystroke": {
+                        "type": "boolean",
+                        "description": "Controls whether style should be updated every time you press a key in the style editor"
                     }
                 }
             }
