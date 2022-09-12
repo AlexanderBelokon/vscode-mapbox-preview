@@ -10,10 +10,6 @@ export function activate(context: vscode.ExtensionContext) {
             context.workspaceState.update('mapboxPreview.style', file.path)
             MapboxPreview.extUri = context.extensionUri
             MapboxPreview.createOrShow(file)
-
-            vscode.workspace.onDidChangeTextDocument(({ document }) =>
-                MapboxPreview.currentPanel?.refreshDocument(document)
-            )
         })
     )
 
@@ -31,10 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
             MapboxPreview.revive(view)
         },
     })
-
-    vscode.workspace.onDidSaveTextDocument(document =>
-        MapboxPreview.refreshFile(document)
-    )
 }
 
 function webviewOptions(): vscode.WebviewOptions {
@@ -100,6 +92,18 @@ class MapboxPreview {
                 console.error(e.error)
                 return vscode.window.showErrorMessage(e.error)
             },
+            null,
+            this.disposables
+        )
+
+        vscode.workspace.onDidChangeTextDocument(
+            ({ document }) => this.refreshDocument(document),
+            null,
+            this.disposables
+        )
+
+        vscode.workspace.onDidSaveTextDocument(
+            document => MapboxPreview.refreshFile(document),
             null,
             this.disposables
         )
