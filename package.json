@@ -86,12 +86,14 @@
         "keybindings": [
             {
                 "command": "mapboxPreview.increase",
-                "key": "ctrl+up",
+                "key": "ctrl+opt+up",
+                "win": "ctrl+alt+up",
                 "when": "editorTextFocus"
             },
             {
                 "command": "mapboxPreview.decrease",
-                "key": "ctrl+down",
+                "key": "ctrl+opt+down",
+                "win": "ctrl+alt+down",
                 "when": "editorTextFocus"
             }
         ]
