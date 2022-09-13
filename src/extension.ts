@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { activate as activateKeys } from './keys'
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -27,6 +28,8 @@ export function activate(context: vscode.ExtensionContext) {
             MapboxPreview.revive(view)
         },
     })
+
+    activateKeys(context)
 }
 
 function webviewOptions(): vscode.WebviewOptions {

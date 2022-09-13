@@ -29,6 +29,8 @@
     ],
     "activationEvents": [
         "onCommand:mapboxPreview.start",
+        "onCommand:mapboxPreview.increase",
+        "onCommand:mapboxPreview.decrease",
         "onWebviewPanel:mapboxPreview"
     ],
     "main": "./out/extension.js",
@@ -69,6 +71,28 @@
                 "command": "mapboxPreview.start",
                 "title": "Start",
                 "category": "Mapbox Preview"
+            },
+            {
+                "command": "mapboxPreview.increase",
+                "title": "Increase",
+                "category": "Mapbox Preview"
+            },
+            {
+                "command": "mapboxPreview.decrease",
+                "title": "Decrease",
+                "category": "Mapbox Preview"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "mapboxPreview.increase",
+                "key": "ctrl+up",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "mapboxPreview.decrease",
+                "key": "ctrl+down",
+                "when": "editorTextFocus"
             }
         ]
     },
