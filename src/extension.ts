@@ -42,6 +42,7 @@ class MapboxPreview {
     public static lastFile: vscode.Uri
     private readonly panel: vscode.WebviewPanel
     private fileUri: vscode.Uri
+    private lastFile = ''
     private lastStyle = ''
     private lastSettings = ''
     private disposables: vscode.Disposable[] = []
@@ -149,8 +150,7 @@ class MapboxPreview {
 
         try {
             const style = document.getText()
-            JSON.parse(style)
-            this.updateStyle(style)
+            this.updateStyle(normalizeJSON(style))
         } catch {}
     }
 
@@ -188,8 +188,9 @@ class MapboxPreview {
 
         try {
             const data = await vscode.workspace.fs.readFile(this.fileUri)
-            const style = JSON.stringify(JSON.parse(data.toString()))
-            this.updateStyle(style)
+            const style = normalizeJSON(data.toString())
+            if (this.lastFile != style) this.updateStyle(style)
+            this.lastFile = style
         } catch (e: any) {
             console.log(`Could not load '${path}': ${e.message}`)
             return vscode.window.showErrorMessage(`Invalid style: ${path}`)
@@ -235,6 +236,10 @@ class MapboxPreview {
 </html>
 `
     }
+}
+
+function normalizeJSON(json: string) {
+    return JSON.stringify(JSON.parse(json))
 }
 
 function getNonce() {
