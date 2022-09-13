@@ -97,8 +97,17 @@ class MapboxPreview {
             this.disposables
         )
 
+        const interval = vscode.workspace
+            .getConfiguration()
+            .get('mapboxPreview.updateThrottle', 100)
+        const throttledRefresh = throttle(
+            interval,
+            (ev: vscode.TextDocumentChangeEvent) =>
+                this.refreshDocument(ev.document)
+        )
+
         vscode.workspace.onDidChangeTextDocument(
-            ({ document }) => this.refreshDocument(document),
+            throttledRefresh,
             null,
             this.disposables
         )
@@ -252,4 +261,18 @@ function getNonce() {
         possible.charAt(Math.floor(Math.random() * possible.length))
 
     return [...new Array(64).keys()].map(randomChar).join('')
+}
+
+function throttle(delay: number, func: Function) {
+    let timeoutId: any | undefined
+    let args: any[] = []
+    return function () {
+        args = [...arguments]
+        if (timeoutId) return
+        timeoutId = setTimeout(() => {
+            timeoutId = undefined
+            func(...args)
+            args = []
+        }, delay)
+    }
 }

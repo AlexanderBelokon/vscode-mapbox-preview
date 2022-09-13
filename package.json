@@ -55,6 +55,11 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Controls whether style should be updated every time you press a key in the style editor"
+                    },
+                    "mapboxPreview.updateThrottle": {
+                        "type": "number",
+                        "default": "100",
+                        "description": "Minimum interval between style updates in milliseconds"
                     }
                 }
             }
