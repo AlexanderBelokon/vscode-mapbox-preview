@@ -2,7 +2,7 @@
     "name": "mapbox-preview",
     "displayName": "Mapbox Preview",
     "description": "Preview styles for Mapbox GL JS in a webview panel",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "publisher": "AlexanderBelokon",
     "private": true,
     "license": "bsd-2-clause",
