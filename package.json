@@ -90,6 +90,12 @@
         ],
         "keybindings": [
             {
+                "command": "mapboxPreview.start",
+                "key": "ctrl+opt+m",
+                "win": "ctrl+alt+m",
+                "when": "editorTextFocus"
+            },
+            {
                 "command": "mapboxPreview.increase",
                 "key": "ctrl+opt+up",
                 "win": "ctrl+alt+up",
