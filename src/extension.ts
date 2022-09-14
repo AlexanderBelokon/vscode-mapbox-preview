@@ -189,9 +189,13 @@ class MapboxPreview {
 
         const version = vscode.workspace
             .getConfiguration()
-            .get<string>('mapboxPreview.version', '2.10.0')
+            .get('mapboxPreview.version', '2.10.0')
 
-        const settings = { token, version, path }
+        const showCoordinates = vscode.workspace
+            .getConfiguration()
+            .get('mapboxPreview.showCoordinates', false)
+
+        const settings = { path, token, version, showCoordinates }
         const nextSettings = JSON.stringify(settings)
         const sameSettings = this.lastSettings == nextSettings
         this.lastSettings = nextSettings
@@ -213,9 +217,14 @@ class MapboxPreview {
 
         const webview = this.panel.webview
         const styleUri = webview.asWebviewUri(this.fileUri)
-        const previewUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(MapboxPreview.extUri, 'media', 'preview.js')
-        )
+
+        const extUri = (...segs) =>
+            webview.asWebviewUri(
+                vscode.Uri.joinPath(MapboxPreview.extUri, ...segs)
+            )
+
+        const hasherUri = extUri('media', 'hasher.js')
+        const previewUri = extUri('media', 'preview.js')
 
         const nonce = getNonce()
 
@@ -240,7 +249,12 @@ class MapboxPreview {
 
         <link href="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.css" rel="stylesheet">
         <script src="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.js"></script>
-        <script nonce="${nonce}">mapboxgl.accessToken = '${token}'; window.styleUri = '${styleUri}';</script>
+        <script nonce="${nonce}">
+            mapboxgl.accessToken = '${token}';
+            window.styleUri = '${styleUri}';
+            window.showCoordinates = ${showCoordinates};
+        </script>
+        <script src="${hasherUri}"></script>
         <script src="${previewUri}"></script>
         <style>#map { position: absolute; inset: 0; }</style>
     </head>

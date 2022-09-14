@@ -7,6 +7,7 @@ addEventListener('load', function () {
         ...vscode.getState(),
         style: window.styleUri,
         container: 'map',
+        dirty: true,
     }
 
     const report = e => {
@@ -20,6 +21,9 @@ addEventListener('load', function () {
 
     const map = new mapboxgl.Map(state)
 
+    const hasher = showCoordinates && new HashControl()
+    if (hasher) map.addControl(hasher)
+
     map.on('drag', () => (state.dirty = true))
     map.on('move', () => (state.dirty = true))
     map.on('zoom', () => (state.dirty = true))
@@ -30,12 +34,14 @@ addEventListener('load', function () {
     setInterval(() => {
         if (!state.dirty) return
         state.dirty = false
-        vscode.setState({
-            center: map.getCenter(),
-            zoom: map.getZoom(),
-            bearing: map.getBearing(),
-            pitch: map.getPitch(),
-        })
+
+        const center = map.getCenter()
+        const zoom = map.getZoom()
+        const bearing = map.getBearing()
+        const pitch = map.getPitch()
+        const position = { center, zoom, bearing, pitch }
+        vscode.setState(position)
+        if (hasher) hasher.set(position)
     }, 100)
 
     window.addEventListener('message', ({ data }) => {
