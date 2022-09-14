@@ -218,7 +218,7 @@ class MapboxPreview {
         const webview = this.panel.webview
         const styleUri = webview.asWebviewUri(this.fileUri)
 
-        const extUri = (...segs) =>
+        const extUri = (...segs: string[]) =>
             webview.asWebviewUri(
                 vscode.Uri.joinPath(MapboxPreview.extUri, ...segs)
             )
