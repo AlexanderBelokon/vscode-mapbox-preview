@@ -49,7 +49,7 @@
                     "mapboxPreview.version": {
                         "type": "string",
                         "default": "2.10.0",
-                        "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                        "pattern": "^\\d+\\.\\d+\\.\\d+(?:[+-][A-Za-z0-9+.-]+(?:.\\d+)?)?$",
                         "patternErrorMessage": "Must be a valid SemVer string",
                         "description": "Version of Mapbox GL JS to use"
                     },

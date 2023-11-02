@@ -189,7 +189,7 @@ class MapboxPreview {
 
         const version = vscode.workspace
             .getConfiguration()
-            .get('mapboxPreview.version', '2.10.0')
+            .get('mapboxPreview.version', '3.0.0-beta.5')
 
         const showCoordinates = vscode.workspace
             .getConfiguration()
