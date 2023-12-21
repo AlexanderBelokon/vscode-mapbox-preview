@@ -173,7 +173,7 @@ class MapboxPreview {
         console.log('Updating style')
         this.panel.webview.postMessage({
             command: 'setStyle',
-            style: JSON.parse(style),
+            style: JSON.parse(style)
         })
     }
 
@@ -189,15 +189,24 @@ class MapboxPreview {
 
         const version = vscode.workspace
             .getConfiguration()
-            .get('mapboxPreview.version', '3.0.0-beta.5')
+            .get('mapboxPreview.version', '3.0.1')
 
         const showCoordinates = vscode.workspace
             .getConfiguration()
             .get('mapboxPreview.showCoordinates', false)
 
-        const settings = { path, token, version, showCoordinates }
+        const lightPresets = vscode.workspace
+        .getConfiguration()
+        .get('mapboxPreview.lightPresets', ['day'])
+
+        console.log('lightPresets',lightPresets)
+
+        const settings = { path, token, version, showCoordinates, lightPresets }
         const nextSettings = JSON.stringify(settings)
         const sameSettings = this.lastSettings == nextSettings
+        console.log('sameSettings', sameSettings)
+        console.log('nextsettings', nextSettings)
+        console.log('lastsettings', this.lastSettings)
         this.lastSettings = nextSettings
 
         this.panel.title = `Mapbox: ${path}`
@@ -231,15 +240,15 @@ class MapboxPreview {
         const csp = [
             `default-src 'none'`,
             `img-src ${webview.cspSource} data: https:`,
-            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com`,
+            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com https://a.tiles.mapbox.com/ https://b.tiles.mapbox.com/`,
             `style-src ${webview.cspSource} 'unsafe-inline' https://api.mapbox.com`,
-            `script-src ${webview.cspSource} 'nonce-${nonce}' https://api.mapbox.com`,
+            `script-src ${webview.cspSource} 'nonce-${nonce}' 'self' https://api.mapbox.com https://unpkg.com 'unsafe-eval'`,
             `worker-src ${webview.cspSource} 'strict-dynamic'`,
         ].join('; ')
 
         console.log('Rendering:', path)
 
-        this.panel.webview.html = `
+        let head = `
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -249,18 +258,32 @@ class MapboxPreview {
 
         <link href="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.css" rel="stylesheet">
         <script src="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.js"></script>
+        <script src="https://unpkg.com/@mapbox/mapbox-gl-sync-move@0.3.1/index.js"></script>
         <script nonce="${nonce}">
             mapboxgl.accessToken = '${token}';
             window.styleUri = '${styleUri}';
             window.showCoordinates = ${showCoordinates};
+            window.lightPresets = '${lightPresets}'
         </script>
         <script src="${hasherUri}"></script>
         <script src="${previewUri}"></script>
-        <style>#map { position: absolute; inset: 0; }</style>
-    </head>
-    <body><div id="map"></div></body>
-</html>
-`
+        <style> 
+            #container { position: relative; display: flex; height: 100vh;}
+            .map { width: 100% }
+        </style>
+        </head>
+        <div id="container">`
+
+        let mapContainers = ``
+        lightPresets.forEach( preset => {
+            mapContainers += `<div id="${preset}" class="map"></div>`
+        })
+
+        const end = `
+        </div>
+    </html>`
+
+    this.panel.webview.html = head + mapContainers + end
     }
 }
 
