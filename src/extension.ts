@@ -80,7 +80,6 @@ class MapboxPreview {
     private constructor(panel: vscode.WebviewPanel, fileUri: vscode.Uri) {
         this.panel = panel
         this.fileUri = fileUri
-
         this.update()
         this.panel.onDidDispose(() => this.dispose(), null, this.disposables)
 
@@ -114,9 +113,15 @@ class MapboxPreview {
             null,
             this.disposables
         )
-
+        
         vscode.workspace.onDidSaveTextDocument(
             document => MapboxPreview.refreshFile(document),
+            null,
+            this.disposables
+        )
+
+        vscode.workspace.onDidChangeConfiguration( 
+            event => this.update(),
             null,
             this.disposables
         )
@@ -146,9 +151,8 @@ class MapboxPreview {
         if (!this.currentPanel.fileUri && loadable)
             this.currentPanel.fileUri = document.uri
 
-        if ((!same && !isSettings) || !this.currentPanel.fileUri) return
+        if (!same || !this.currentPanel.fileUri || isSettings) return
 
-        console.log('Refreshing')
         this.currentPanel.update()
     }
 
@@ -196,17 +200,12 @@ class MapboxPreview {
             .get('mapboxPreview.showCoordinates', false)
 
         const lightPresets = vscode.workspace
-        .getConfiguration()
-        .get('mapboxPreview.lightPresets', ['day'])
-
-        console.log('lightPresets',lightPresets)
+            .getConfiguration()
+            .get('mapboxPreview.lightPresets', ['day'])
 
         const settings = { path, token, version, showCoordinates, lightPresets }
         const nextSettings = JSON.stringify(settings)
         const sameSettings = this.lastSettings == nextSettings
-        console.log('sameSettings', sameSettings)
-        console.log('nextsettings', nextSettings)
-        console.log('lastsettings', this.lastSettings)
         this.lastSettings = nextSettings
 
         this.panel.title = `Mapbox: ${path}`
