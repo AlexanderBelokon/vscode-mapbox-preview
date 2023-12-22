@@ -121,7 +121,7 @@ class MapboxPreview {
         )
 
         vscode.workspace.onDidChangeConfiguration( 
-            event => this.update(),
+            e => this.update(),
             null,
             this.disposables
         )
@@ -177,7 +177,7 @@ class MapboxPreview {
         console.log('Updating style')
         this.panel.webview.postMessage({
             command: 'setStyle',
-            style: JSON.parse(style)
+            update: JSON.parse(style)
         })
     }
 
@@ -203,6 +203,10 @@ class MapboxPreview {
             .getConfiguration()
             .get('mapboxPreview.lightPresets', ['day'])
 
+        if (lightPresets.length === 0) {
+            lightPresets.push('default')
+        }
+
         const settings = { path, token, version, showCoordinates, lightPresets }
         const nextSettings = JSON.stringify(settings)
         const sameSettings = this.lastSettings == nextSettings
@@ -222,6 +226,17 @@ class MapboxPreview {
 
         if (sameSettings)
             return console.log('Same settings, skipping rendering')
+
+        if (this.panel.webview.html) { 
+            this.panel.webview.postMessage({
+                command: 'updateMaps',
+                update: {
+                    settings,
+                    style: JSON.parse(this.lastFile)
+                }
+            })
+            return console.log('has webview, skipping rendering')
+        }
 
         const webview = this.panel.webview
         const styleUri = webview.asWebviewUri(this.fileUri)
@@ -247,7 +262,7 @@ class MapboxPreview {
 
         console.log('Rendering:', path)
 
-        let head = `
+        this.panel.webview.html = `
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -271,18 +286,8 @@ class MapboxPreview {
             .map { width: 100% }
         </style>
         </head>
-        <div id="container">`
-
-        let mapContainers = ``
-        lightPresets.forEach( preset => {
-            mapContainers += `<div id="${preset}" class="map"></div>`
-        })
-
-        const end = `
-        </div>
+        <body><div id="container"></div></body>
     </html>`
-
-    this.panel.webview.html = head + mapContainers + end
     }
 }
 

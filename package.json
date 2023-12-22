@@ -71,8 +71,7 @@
                             "type": "string",
                             "enum": ["dawn", "day", "dusk", "night"]
                         },
-                        "default": ["day"],
-                        "description": "Select one or more light preset option if using the Mapbox Standard Style",
+                        "description": "Select one or more light preset option if using the Mapbox Standard Style. Only works with the Standard style with light presets, not custom styles.",
                         "uniqueItems": true,
                         "validationErrorMessage": "Duplicate options are not allowed",
                         "when": {
