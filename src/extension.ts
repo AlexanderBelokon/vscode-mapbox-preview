@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 import * as vscode from 'vscode'
 import { activate as activateKeys } from './keys'
 
@@ -80,7 +81,6 @@ class MapboxPreview {
     private constructor(panel: vscode.WebviewPanel, fileUri: vscode.Uri) {
         this.panel = panel
         this.fileUri = fileUri
-
         this.update()
         this.panel.onDidDispose(() => this.dispose(), null, this.disposables)
 
@@ -120,6 +120,12 @@ class MapboxPreview {
             null,
             this.disposables
         )
+
+        vscode.workspace.onDidChangeConfiguration(
+            e => this.update(),
+            null,
+            this.disposables
+        )
     }
 
     public dispose() {
@@ -146,9 +152,8 @@ class MapboxPreview {
         if (!this.currentPanel.fileUri && loadable)
             this.currentPanel.fileUri = document.uri
 
-        if ((!same && !isSettings) || !this.currentPanel.fileUri) return
+        if (!same || !this.currentPanel.fileUri || isSettings) return
 
-        console.log('Refreshing')
         this.currentPanel.update()
     }
 
@@ -189,13 +194,19 @@ class MapboxPreview {
 
         const version = vscode.workspace
             .getConfiguration()
-            .get('mapboxPreview.version', '3.0.0-beta.5')
+            .get('mapboxPreview.version', '3.0.1')
 
         const showCoordinates = vscode.workspace
             .getConfiguration()
             .get('mapboxPreview.showCoordinates', false)
 
-        const settings = { path, token, version, showCoordinates }
+        const lightPresets = vscode.workspace
+            .getConfiguration()
+            .get('mapboxPreview.lightPresets', ['day'])
+
+        if (!lightPresets.length) lightPresets.push('default')
+
+        const settings = { path, token, version, showCoordinates, lightPresets }
         const nextSettings = JSON.stringify(settings)
         const sameSettings = this.lastSettings == nextSettings
         this.lastSettings = nextSettings
@@ -215,6 +226,15 @@ class MapboxPreview {
         if (sameSettings)
             return console.log('Same settings, skipping rendering')
 
+        if (this.panel.webview.html) {
+            this.panel.webview.postMessage({
+                command: 'updateMaps',
+                settings,
+                style: JSON.parse(this.lastFile),
+            })
+            return console.log('Has webview, skipping rendering')
+        }
+
         const webview = this.panel.webview
         const styleUri = webview.asWebviewUri(this.fileUri)
 
@@ -231,9 +251,9 @@ class MapboxPreview {
         const csp = [
             `default-src 'none'`,
             `img-src ${webview.cspSource} data: https:`,
-            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com`,
+            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com`,
             `style-src ${webview.cspSource} 'unsafe-inline' https://api.mapbox.com`,
-            `script-src ${webview.cspSource} 'nonce-${nonce}' https://api.mapbox.com`,
+            `script-src ${webview.cspSource} 'nonce-${nonce}' 'self' https://api.mapbox.com https://unpkg.com 'unsafe-eval'`,
             `worker-src ${webview.cspSource} 'strict-dynamic'`,
         ].join('; ')
 
@@ -249,18 +269,22 @@ class MapboxPreview {
 
         <link href="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.css" rel="stylesheet">
         <script src="https://api.mapbox.com/mapbox-gl-js/v${version}/mapbox-gl.js"></script>
+        <script src="https://unpkg.com/@mapbox/mapbox-gl-sync-move@0.3.1/index.js"></script>
         <script nonce="${nonce}">
             mapboxgl.accessToken = '${token}';
             window.styleUri = '${styleUri}';
             window.showCoordinates = ${showCoordinates};
+            window.lightPresets = JSON.parse('${JSON.stringify(lightPresets)}')
         </script>
         <script src="${hasherUri}"></script>
         <script src="${previewUri}"></script>
-        <style>#map { position: absolute; inset: 0; }</style>
-    </head>
-    <body><div id="map"></div></body>
-</html>
-`
+        <style> 
+            #container { position: relative; display: flex; height: 100vh;}
+            .map { width: 100% }
+        </style>
+        </head>
+        <body><div id="container"></div></body>
+    </html>`
     }
 }
 
@@ -280,10 +304,12 @@ function getNonce() {
     return [...new Array(64).keys()].map(randomChar).join('')
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 function throttle(delay: number, func: Function) {
     let timeoutId: any | undefined
     let args: any[] = []
     return function () {
+        // eslint-disable-next-line prefer-rest-params
         args = [...arguments]
         if (timeoutId) return
         timeoutId = setTimeout(() => {

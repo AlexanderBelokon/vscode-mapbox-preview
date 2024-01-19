@@ -45,7 +45,7 @@
                     },
                     "mapboxPreview.version": {
                         "type": "string",
-                        "default": "2.10.0",
+                        "default": "3.0.1",
                         "pattern": "^\\d+\\.\\d+\\.\\d+(?:[+-][A-Za-z0-9+.-]+(?:.\\d+)?)?$",
                         "patternErrorMessage": "Must be a valid SemVer string",
                         "description": "Version of Mapbox GL JS to use"
@@ -64,6 +64,30 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Controls whether the coordinate editor is visible in the preview panel"
+                    },
+                    "mapboxPreview.lightPresets": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "dawn",
+                                "day",
+                                "dusk",
+                                "night"
+                            ]
+                        },
+                        "description": "Select one or more light preset option if using the Mapbox Standard Style. Only works with the Standard style with light presets, not custom styles.",
+                        "uniqueItems": true,
+                        "validationErrorMessage": "Duplicate options are not allowed",
+                        "when": {
+                            "not": {
+                                "properties": {
+                                    "mapboxPreview.version": {
+                                        "pattern": "^(?:3\\.[0-9]+\\.[0-9]+|[4-9]\\d*\\.\\d+\\.\\d+)$"
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -116,6 +140,7 @@
     },
     "devDependencies": {
         "@types/node": "^16.11.7",
+        "@types/node-fetch": "^2.6.9",
         "@types/vscode": "^1.47.0",
         "@types/vscode-webview": "^1.57.0",
         "@typescript-eslint/eslint-plugin": "^5.30.0",
