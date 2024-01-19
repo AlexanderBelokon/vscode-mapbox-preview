@@ -6,10 +6,10 @@ addEventListener('load', function () {
     let mbxSync
     let hasher
 
-    let mapContainer = document.getElementById("container")
+    let mapContainer = document.getElementById('container')
 
     if (mapContainer) {
-        lightPresetArr.forEach( preset => {
+        lightPresetArr.forEach(preset => {
             var div = document.createElement('div')
             div.id = preset
             div.className = 'map'
@@ -31,7 +31,6 @@ addEventListener('load', function () {
     addHash(syncedMaps[lastIndex].map)
 
     window.addEventListener('message', ({ data }) => {
-        
         const { command, update } = data
 
         if (command == 'setStyle') {
@@ -45,15 +44,20 @@ addEventListener('load', function () {
             if (mbxSync) {
                 mbxSync()
             }
-            
+
             var mapContainer = document.getElementById('container')
 
             // determin if adding or removing maps
             const existingLight = syncedMaps.map(obj => obj.preset)
-            const configChanges = compareLights(existingLight, update.settings.lightPresets)
+            const configChanges = compareLights(
+                existingLight,
+                update.settings.lightPresets
+            )
 
-            configChanges.removed.forEach( remove => {
-                const removeIdx = syncedMaps.findIndex(obj => obj.preset === remove)
+            configChanges.removed.forEach(remove => {
+                const removeIdx = syncedMaps.findIndex(
+                    obj => obj.preset === remove
+                )
                 syncedMaps[removeIdx].map.remove()
                 syncedMaps.splice(removeIdx, 1)
                 var childToRemove = document.getElementById(remove)
@@ -62,7 +66,7 @@ addEventListener('load', function () {
                 }
             })
 
-            configChanges.added.forEach( add => {
+            configChanges.added.forEach(add => {
                 var div = document.createElement('div')
                 div.id = add
                 div.className = 'map'
@@ -72,7 +76,7 @@ addEventListener('load', function () {
 
             syncedMaps.forEach((sync, index) => {
                 if (sync.hash) {
-                    syncedMaps[index].hash = false 
+                    syncedMaps[index].hash = false
                     sync.map.removeControl(hasher)
                 }
                 sync.map.resize()
@@ -82,11 +86,10 @@ addEventListener('load', function () {
                 const arrayOfMaps = syncedMaps.map(obj => obj.map)
                 mbxSync = syncMaps(arrayOfMaps)
             }
-            
+
             const lastIndex = syncedMaps.length - 1
             syncedMaps[lastIndex].hash = true
             addHash(syncedMaps[lastIndex].map)
-
         }
     })
 
@@ -95,11 +98,11 @@ addEventListener('load', function () {
             projection: 'globe',
             ...vscode.getState(),
             style: style,
-            container: preset
+            container: preset,
         }
-    
+
         vscode.postMessage({ text: 'Starting Mapbox GL JS' })
-    
+
         const map = new mapboxgl.Map(state)
 
         if (preset !== 'default') {
@@ -111,18 +114,18 @@ addEventListener('load', function () {
         syncedMaps.push({
             preset,
             map,
-            hash: false
+            hash: false,
         })
     }
-  
-    function addHash( map ) {
+
+    function addHash(map) {
         const report = e => {
             console.error('caught:', e)
             vscode.postMessage({ error: e.message, stack: e.stack })
         }
         window.addEventListener('error', report)
         window.addEventListener('unhandledrejection', report)
-    
+
         hasher = showCoordinates && new HashControl()
         if (hasher) map.addControl(hasher)
 
@@ -137,7 +140,7 @@ addEventListener('load', function () {
         setInterval(() => {
             if (!dirty) return
             dirty = false
-    
+
             const center = map.getCenter()
             const zoom = map.getZoom()
             const bearing = map.getBearing()
@@ -146,19 +149,20 @@ addEventListener('load', function () {
             vscode.setState(position)
             if (hasher) hasher.set(position)
         }, 100)
-
     }
-    
+
     function compareLights(oldArray, newArray) {
         const uniqueValues = new Set([...oldArray, ...newArray])
-      
+
         // Check if the unique set has the same length as the old and new arrays
-        if (uniqueValues.size !== oldArray.length || uniqueValues.size !== newArray.length) {
-          // Values have been added or removed
-          const added = newArray.filter((value) => !oldArray.includes(value))
-          const removed = oldArray.filter((value) => !newArray.includes(value))
-          return { added, removed }
+        if (
+            uniqueValues.size !== oldArray.length ||
+            uniqueValues.size !== newArray.length
+        ) {
+            // Values have been added or removed
+            const added = newArray.filter(value => !oldArray.includes(value))
+            const removed = oldArray.filter(value => !newArray.includes(value))
+            return { added, removed }
         }
     }
-
 })

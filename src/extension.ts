@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 import * as vscode from 'vscode'
 import { activate as activateKeys } from './keys'
 
@@ -113,14 +114,14 @@ class MapboxPreview {
             null,
             this.disposables
         )
-        
+
         vscode.workspace.onDidSaveTextDocument(
             document => MapboxPreview.refreshFile(document),
             null,
             this.disposables
         )
 
-        vscode.workspace.onDidChangeConfiguration( 
+        vscode.workspace.onDidChangeConfiguration(
             e => this.update(),
             null,
             this.disposables
@@ -177,7 +178,7 @@ class MapboxPreview {
         console.log('Updating style')
         this.panel.webview.postMessage({
             command: 'setStyle',
-            update: JSON.parse(style)
+            update: JSON.parse(style),
         })
     }
 
@@ -227,15 +228,15 @@ class MapboxPreview {
         if (sameSettings)
             return console.log('Same settings, skipping rendering')
 
-        if (this.panel.webview.html) { 
+        if (this.panel.webview.html) {
             this.panel.webview.postMessage({
                 command: 'updateMaps',
                 update: {
                     settings,
-                    style: JSON.parse(this.lastFile)
-                }
+                    style: JSON.parse(this.lastFile),
+                },
             })
-            return console.log('has webview, skipping rendering')
+            return console.log('Has webview, skipping rendering')
         }
 
         const webview = this.panel.webview
@@ -307,10 +308,12 @@ function getNonce() {
     return [...new Array(64).keys()].map(randomChar).join('')
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 function throttle(delay: number, func: Function) {
     let timeoutId: any | undefined
     let args: any[] = []
     return function () {
+        // eslint-disable-next-line prefer-rest-params
         args = [...arguments]
         if (timeoutId) return
         timeoutId = setTimeout(() => {
