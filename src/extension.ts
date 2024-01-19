@@ -178,7 +178,7 @@ class MapboxPreview {
         console.log('Updating style')
         this.panel.webview.postMessage({
             command: 'setStyle',
-            update: JSON.parse(style),
+            style: JSON.parse(style),
         })
     }
 
@@ -204,9 +204,7 @@ class MapboxPreview {
             .getConfiguration()
             .get('mapboxPreview.lightPresets', ['day'])
 
-        if (lightPresets.length === 0) {
-            lightPresets.push('default')
-        }
+        if (!lightPresets.length) lightPresets.push('default')
 
         const settings = { path, token, version, showCoordinates, lightPresets }
         const nextSettings = JSON.stringify(settings)
@@ -231,10 +229,8 @@ class MapboxPreview {
         if (this.panel.webview.html) {
             this.panel.webview.postMessage({
                 command: 'updateMaps',
-                update: {
-                    settings,
-                    style: JSON.parse(this.lastFile),
-                },
+                settings,
+                style: JSON.parse(this.lastFile),
             })
             return console.log('Has webview, skipping rendering')
         }
@@ -278,7 +274,7 @@ class MapboxPreview {
             mapboxgl.accessToken = '${token}';
             window.styleUri = '${styleUri}';
             window.showCoordinates = ${showCoordinates};
-            window.lightPresets = '${lightPresets}'
+            window.lightPresets = JSON.parse('${JSON.stringify(lightPresets)}')
         </script>
         <script src="${hasherUri}"></script>
         <script src="${previewUri}"></script>

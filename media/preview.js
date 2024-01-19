@@ -1,168 +1,145 @@
 // @ts-nocheck
+
+function createMap(savedState, style, preset) {
+    console.log('Starting Mapbox GL JS')
+
+    const map = new mapboxgl.Map({
+        projection: 'globe',
+        ...savedState,
+        style,
+        container: preset,
+    })
+
+    if (preset !== 'default')
+        map.on('style.load', () => {
+            map.setConfigProperty('basemap', 'lightPreset', preset)
+        })
+
+    return map
+}
+
+function addHash({ map, report, setState }) {
+    const dirtyEvents = ['drag', 'move', 'zoom', 'rotate', 'pitch']
+    const markDirty = () => (dirty = true)
+    const reportError = ({ error }) => report(error)
+
+    const hasher = window.showCoordinates && new HashControl()
+    if (hasher) {
+        map.addControl(hasher)
+        map.unhash = () => {
+            clearInterval(map.interval)
+
+            for (const event of dirtyEvents) map.off(event, markDirty)
+            map.off('error', reportError)
+
+            map.removeControl(hasher)
+            delete map.unhash
+        }
+    }
+
+    let dirty = true
+
+    for (const event of dirtyEvents) map.on(event, markDirty)
+    map.on('error', reportError)
+
+    map.interval = setInterval(() => {
+        if (!dirty) return
+        dirty = false
+
+        const center = map.getCenter()
+        const zoom = map.getZoom()
+        const bearing = map.getBearing()
+        const pitch = map.getPitch()
+        const position = { center, zoom, bearing, pitch }
+        setState(position)
+        if (hasher) hasher.set(position)
+    }, 100)
+}
+
+function compareLights(prev, next) {
+    const unique = [...new Set([...prev, ...next])]
+    if (next.length == prev.length && next.length == unique.length) return
+
+    const added = unique.filter(d => !prev.includes(d))
+    const removed = unique.filter(d => !next.includes(d))
+    return { added, removed }
+}
+
 addEventListener('load', function () {
     const vscode = acquireVsCodeApi()
-    const lightPresetArr = window.lightPresets.split(',')
-    let syncedMaps = []
+
+    const report = e => {
+        console.error('Map error:', e)
+        vscode.postMessage({ error: e.message, stack: e.stack })
+    }
+
+    window.addEventListener('error', report)
+    window.addEventListener('unhandledrejection', report)
+
+    const maps = []
+
+    const mapContainer = document.getElementById('container')
+    if (!mapContainer) return
+
+    function mountMap(preset) {
+        const div = document.createElement('div')
+        div.id = preset
+        div.className = 'map'
+        mapContainer.appendChild(div)
+        const map = createMap(vscode.getState(), window.styleUri, preset)
+        maps.push({ preset, map })
+    }
+    function unmountMap(preset) {
+        const index = maps.findIndex(d => d.preset === preset)
+        const [{ map }] = maps.splice(index, 1)
+        map.getContainer().remove()
+        map.remove()
+    }
+
     let mbxSync
-    let hasher
-
-    let mapContainer = document.getElementById('container')
-
-    if (mapContainer) {
-        lightPresetArr.forEach(preset => {
-            var div = document.createElement('div')
-            div.id = preset
-            div.className = 'map'
-            mapContainer.appendChild(div)
-        })
+    const resync = () => {
+        if (mbxSync) {
+            mbxSync()
+            mbxSync = null
+        }
+        if (1 < maps.length) mbxSync = syncMaps(maps.map(d => d.map))
     }
 
-    lightPresetArr.forEach(preset => {
-        createMap(preset, window.styleUri)
-    })
+    const addRemoveMaps = nextPresets => {
+        const { added, removed } = compareLights(
+            maps.map(d => d.preset),
+            nextPresets
+        )
 
-    if (syncedMaps.length > 1) {
-        const arrayOfMaps = syncedMaps.map(obj => obj.map)
-        mbxSync = syncMaps(arrayOfMaps)
+        if (!added && !removed) return
+
+        for (const preset of removed) unmountMap(preset)
+        for (const preset of added) mountMap(preset)
+
+        for (const { map } of maps) {
+            map.unhash?.()
+            map.resize()
+        }
+
+        const { map: lastMap } = maps.slice(-1)[0]
+        addHash({ report, setState: vscode.setState, map: lastMap })
+        resync()
     }
 
-    const lastIndex = syncedMaps.length - 1
-    syncedMaps[lastIndex].hash = true
-    addHash(syncedMaps[lastIndex].map)
+    addRemoveMaps(window.lightPresets)
 
     window.addEventListener('message', ({ data }) => {
-        const { command, update } = data
+        const { command, style, settings } = data
 
         if (command == 'setStyle') {
-            console.log('Got a new style:', update)
-            syncedMaps.forEach(sync => {
-                sync.map.setStyle(update)
-            })
+            console.log('Got a new style:', style)
+
+            for (const sync of maps) sync.map.setStyle(style)
         } else if (command == 'updateMaps') {
-            console.log('update maps config', update)
-            // removes existing sync so can be reset again with add/removed maps
-            if (mbxSync) {
-                mbxSync()
-            }
+            console.log('Got a config update:', settings)
 
-            var mapContainer = document.getElementById('container')
-
-            // determin if adding or removing maps
-            const existingLight = syncedMaps.map(obj => obj.preset)
-            const configChanges = compareLights(
-                existingLight,
-                update.settings.lightPresets
-            )
-
-            configChanges.removed.forEach(remove => {
-                const removeIdx = syncedMaps.findIndex(
-                    obj => obj.preset === remove
-                )
-                syncedMaps[removeIdx].map.remove()
-                syncedMaps.splice(removeIdx, 1)
-                var childToRemove = document.getElementById(remove)
-                if (childToRemove) {
-                    mapContainer.removeChild(childToRemove)
-                }
-            })
-
-            configChanges.added.forEach(add => {
-                var div = document.createElement('div')
-                div.id = add
-                div.className = 'map'
-                mapContainer.appendChild(div)
-                createMap(add, update.style)
-            })
-
-            syncedMaps.forEach((sync, index) => {
-                if (sync.hash) {
-                    syncedMaps[index].hash = false
-                    sync.map.removeControl(hasher)
-                }
-                sync.map.resize()
-            })
-
-            if (syncedMaps.length > 1) {
-                const arrayOfMaps = syncedMaps.map(obj => obj.map)
-                mbxSync = syncMaps(arrayOfMaps)
-            }
-
-            const lastIndex = syncedMaps.length - 1
-            syncedMaps[lastIndex].hash = true
-            addHash(syncedMaps[lastIndex].map)
+            addRemoveMaps(settings.lightPresets)
+            for (const sync of maps) sync.map.setStyle(style)
         }
     })
-
-    function createMap(preset, style) {
-        const state = {
-            projection: 'globe',
-            ...vscode.getState(),
-            style: style,
-            container: preset,
-        }
-
-        vscode.postMessage({ text: 'Starting Mapbox GL JS' })
-
-        const map = new mapboxgl.Map(state)
-
-        if (preset !== 'default') {
-            map.on('style.load', () => {
-                map.setConfigProperty('basemap', 'lightPreset', preset)
-            })
-        }
-
-        syncedMaps.push({
-            preset,
-            map,
-            hash: false,
-        })
-    }
-
-    function addHash(map) {
-        const report = e => {
-            console.error('caught:', e)
-            vscode.postMessage({ error: e.message, stack: e.stack })
-        }
-        window.addEventListener('error', report)
-        window.addEventListener('unhandledrejection', report)
-
-        hasher = showCoordinates && new HashControl()
-        if (hasher) map.addControl(hasher)
-
-        let dirty = true
-
-        map.on('drag', () => (dirty = true))
-        map.on('move', () => (dirty = true))
-        map.on('zoom', () => (dirty = true))
-        map.on('rotate', () => (dirty = true))
-        map.on('pitch', () => (dirty = true))
-        map.on('error', ({ error }) => report(error))
-        setInterval(() => {
-            if (!dirty) return
-            dirty = false
-
-            const center = map.getCenter()
-            const zoom = map.getZoom()
-            const bearing = map.getBearing()
-            const pitch = map.getPitch()
-            const position = { center, zoom, bearing, pitch }
-            vscode.setState(position)
-            if (hasher) hasher.set(position)
-        }, 100)
-    }
-
-    function compareLights(oldArray, newArray) {
-        const uniqueValues = new Set([...oldArray, ...newArray])
-
-        // Check if the unique set has the same length as the old and new arrays
-        if (
-            uniqueValues.size !== oldArray.length ||
-            uniqueValues.size !== newArray.length
-        ) {
-            // Values have been added or removed
-            const added = newArray.filter(value => !oldArray.includes(value))
-            const removed = oldArray.filter(value => !newArray.includes(value))
-            return { added, removed }
-        }
-    }
 })
