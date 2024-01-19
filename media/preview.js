@@ -12,7 +12,9 @@ function createMap(savedState, style, preset) {
 
     if (preset !== 'default')
         map.on('style.load', () => {
-            map.setConfigProperty('basemap', 'lightPreset', preset)
+            try {
+                map.setConfigProperty('basemap', 'lightPreset', preset)
+            } catch {}
         })
 
     return map
