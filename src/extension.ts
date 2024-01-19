@@ -251,7 +251,7 @@ class MapboxPreview {
         const csp = [
             `default-src 'none'`,
             `img-src ${webview.cspSource} data: https:`,
-            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com https://a.tiles.mapbox.com/ https://b.tiles.mapbox.com/`,
+            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com`,
             `style-src ${webview.cspSource} 'unsafe-inline' https://api.mapbox.com`,
             `script-src ${webview.cspSource} 'nonce-${nonce}' 'self' https://api.mapbox.com https://unpkg.com 'unsafe-eval'`,
             `worker-src ${webview.cspSource} 'strict-dynamic'`,

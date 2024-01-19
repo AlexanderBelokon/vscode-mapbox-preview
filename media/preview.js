@@ -20,6 +20,8 @@ function createMap(savedState, style, preset) {
 
 function addHash({ map, report, setState }) {
     const dirtyEvents = ['drag', 'move', 'zoom', 'rotate', 'pitch']
+    let dirty = true
+
     const markDirty = () => (dirty = true)
     const reportError = ({ error }) => report(error)
 
@@ -36,8 +38,6 @@ function addHash({ map, report, setState }) {
             delete map.unhash
         }
     }
-
-    let dirty = true
 
     for (const event of dirtyEvents) map.on(event, markDirty)
     map.on('error', reportError)
