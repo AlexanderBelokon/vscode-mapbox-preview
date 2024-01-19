@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 import * as vscode from 'vscode'
 import { activate as activateKeys } from './keys'
 
@@ -113,14 +114,14 @@ class MapboxPreview {
             null,
             this.disposables
         )
-        
+
         vscode.workspace.onDidSaveTextDocument(
             document => MapboxPreview.refreshFile(document),
             null,
             this.disposables
         )
 
-        vscode.workspace.onDidChangeConfiguration( 
+        vscode.workspace.onDidChangeConfiguration(
             e => this.update(),
             null,
             this.disposables
@@ -177,7 +178,7 @@ class MapboxPreview {
         console.log('Updating style')
         this.panel.webview.postMessage({
             command: 'setStyle',
-            update: JSON.parse(style)
+            style: JSON.parse(style),
         })
     }
 
@@ -203,9 +204,7 @@ class MapboxPreview {
             .getConfiguration()
             .get('mapboxPreview.lightPresets', ['day'])
 
-        if (lightPresets.length === 0) {
-            lightPresets.push('default')
-        }
+        if (!lightPresets.length) lightPresets.push('default')
 
         const settings = { path, token, version, showCoordinates, lightPresets }
         const nextSettings = JSON.stringify(settings)
@@ -227,15 +226,13 @@ class MapboxPreview {
         if (sameSettings)
             return console.log('Same settings, skipping rendering')
 
-        if (this.panel.webview.html) { 
+        if (this.panel.webview.html) {
             this.panel.webview.postMessage({
                 command: 'updateMaps',
-                update: {
-                    settings,
-                    style: JSON.parse(this.lastFile)
-                }
+                settings,
+                style: JSON.parse(this.lastFile),
             })
-            return console.log('has webview, skipping rendering')
+            return console.log('Has webview, skipping rendering')
         }
 
         const webview = this.panel.webview
@@ -254,7 +251,7 @@ class MapboxPreview {
         const csp = [
             `default-src 'none'`,
             `img-src ${webview.cspSource} data: https:`,
-            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com https://a.tiles.mapbox.com/ https://b.tiles.mapbox.com/`,
+            `connect-src ${webview.cspSource} https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com`,
             `style-src ${webview.cspSource} 'unsafe-inline' https://api.mapbox.com`,
             `script-src ${webview.cspSource} 'nonce-${nonce}' 'self' https://api.mapbox.com https://unpkg.com 'unsafe-eval'`,
             `worker-src ${webview.cspSource} 'strict-dynamic'`,
@@ -277,7 +274,7 @@ class MapboxPreview {
             mapboxgl.accessToken = '${token}';
             window.styleUri = '${styleUri}';
             window.showCoordinates = ${showCoordinates};
-            window.lightPresets = '${lightPresets}'
+            window.lightPresets = JSON.parse('${JSON.stringify(lightPresets)}')
         </script>
         <script src="${hasherUri}"></script>
         <script src="${previewUri}"></script>
@@ -307,10 +304,12 @@ function getNonce() {
     return [...new Array(64).keys()].map(randomChar).join('')
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 function throttle(delay: number, func: Function) {
     let timeoutId: any | undefined
     let args: any[] = []
     return function () {
+        // eslint-disable-next-line prefer-rest-params
         args = [...arguments]
         if (timeoutId) return
         timeoutId = setTimeout(() => {

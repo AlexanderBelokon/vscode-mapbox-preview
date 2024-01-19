@@ -69,7 +69,12 @@
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["dawn", "day", "dusk", "night"]
+                            "enum": [
+                                "dawn",
+                                "day",
+                                "dusk",
+                                "night"
+                            ]
                         },
                         "description": "Select one or more light preset option if using the Mapbox Standard Style. Only works with the Standard style with light presets, not custom styles.",
                         "uniqueItems": true,
@@ -135,6 +140,7 @@
     },
     "devDependencies": {
         "@types/node": "^16.11.7",
+        "@types/node-fetch": "^2.6.9",
         "@types/vscode": "^1.47.0",
         "@types/vscode-webview": "^1.57.0",
         "@typescript-eslint/eslint-plugin": "^5.30.0",
